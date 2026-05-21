@@ -30,10 +30,6 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     Print Handout
                 </button>
-                <button id="toggle-answers" onclick="toggleTeacherMode()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    <span>Show All Answers</span>
-                </button>
             </div>
         </div>
     </header>
@@ -49,7 +45,8 @@
                 <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
             <div class="flex items-center gap-2">
-                <span class="font-bold text-indigo-950" id="live-score">Score: 0/30</span>
+                <span class="font-bold text-indigo-950 mr-2" id="live-score">Score Locked</span>
+                <button id="reveal-results-btn" onclick="revealAllResults()" disabled class="bg-slate-200 text-slate-400 font-bold px-3 py-1.5 rounded text-xs cursor-not-allowed transition">Lock Answers</button>
                 <button onclick="resetQuiz()" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 rounded border border-red-200 hover:bg-red-50">Reset</button>
             </div>
         </div>
@@ -81,6 +78,14 @@
             <!-- Questions are injected here via JS -->
         </div>
     </main>
+
+    <!-- Hidden Teacher Mode Option inside Footer (Whiteboard review) -->
+    <footer class="mt-16 border-t border-slate-200 py-8 text-center text-xs text-slate-400 no-print bg-slate-100">
+        <p>© 2026 Eduqas GCE A-Level Computer Science. All rights reserved.</p>
+        <p class="mt-2">
+            <button onclick="activateTeacherMode()" class="text-slate-400 hover:text-indigo-600 transition underline focus:outline-none">Teacher Mode / Whiteboard Quick Reveal</button>
+        </p>
+    </footer>
 
     <!-- Embedded Vanilla JS to drive UI and Questions -->
     <script>
@@ -449,7 +454,11 @@
             }
         ];
 
-        let teacherMode = false;
+        let resultsRevealed = false;
+        let selectedAnswers = {}; // stores MC selections { qId: optionIdx }
+        let saAnswers = {}; // stores SA answers { qId: textValue }
+        const scores = {}; // stores individual grades { qId: 1 or 0 }
+        const completed = {}; // stores { qId: true }
         let selectedCategory = 'all';
 
         function renderQuiz() {
@@ -483,12 +492,32 @@
 
                 let formFields = "";
                 if (q.type === "mc") {
-                    formFields = `<div class="space-y-2 no-print">`;
+                    formFields = `<div id="mc-options-${q.id}" class="space-y-2 no-print">`;
                     q.options.forEach((opt, optIdx) => {
+                        const isSelected = selectedAnswers[q.id] === optIdx;
+                        const isCorrect = q.correct === optIdx;
+                        let bgBorderClass = "border-slate-200 hover:bg-slate-50";
+                        
+                        if (isSelected) {
+                            bgBorderClass = "bg-indigo-50 border-indigo-300";
+                        }
+                        if (resultsRevealed) {
+                            if (isCorrect) {
+                                bgBorderClass = "bg-green-50 border-green-300 text-green-900 font-bold";
+                            } else if (isSelected) {
+                                bgBorderClass = "bg-red-50 border-red-300 text-red-900";
+                            } else {
+                                bgBorderClass = "border-slate-100 opacity-50";
+                            }
+                        }
+
                         formFields += `
-                            <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
-                                <input type="radio" name="q-${q.id}" value="${optIdx}" onclick="checkAnswer(${q.id}, ${optIdx}, ${q.correct})" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
-                                <span class="text-sm font-medium text-slate-700">${opt}</span>
+                            <label class="flex items-center gap-3 p-3 rounded-lg border ${bgBorderClass} cursor-pointer transition">
+                                <input type="radio" name="q-${q.id}" value="${optIdx}" 
+                                    ${isSelected ? 'checked' : ''} 
+                                    ${resultsRevealed ? 'disabled' : ''}
+                                    onclick="selectMC(${q.id}, ${optIdx})" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium">${opt}</span>
                             </label>
                         `;
                     });
@@ -497,82 +526,97 @@
                     // Printable view for MC
                     formFields += `<div class="hidden print:block mt-3 space-y-1">`;
                     q.options.forEach((opt, optIdx) => {
+                        const isCorrect = q.correct === optIdx;
+                        const marker = (resultsRevealed && isCorrect) ? "✔" : " ";
                         formFields += `
                             <div class="text-sm flex items-start gap-2">
-                                <span class="border border-slate-400 rounded-full w-4 h-4 inline-block mt-0.5 flex-shrink-0"></span>
-                                <span>${opt}</span>
+                                <span class="border border-slate-400 rounded-full w-4 h-4 inline-flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">${marker}</span>
+                                <span class="${(resultsRevealed && isCorrect) ? 'font-bold text-green-800' : ''}">${opt}</span>
                             </div>
                         `;
                     });
                     formFields += `</div>`;
 
                 } else if (q.type === "sa") {
+                    const savedText = saAnswers[q.id] || "";
                     formFields = `
                         <div class="no-print">
-                            <textarea id="input-sa-${q.id}" oninput="evaluateSA(${q.id})" rows="3" placeholder="${q.placeholder}" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                            <button onclick="revealSA(${q.id})" class="mt-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded transition">Self Check / Reveal</button>
+                            <textarea id="input-sa-${q.id}" 
+                                ${resultsRevealed ? 'disabled' : ''}
+                                oninput="evaluateSA(${q.id}, this.value)" rows="3" placeholder="${q.placeholder}" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">${savedText}</textarea>
                         </div>
                         <div class="hidden print:block mt-2">
-                            <div class="border-b border-dashed border-slate-400 h-16 w-full"></div>
+                            ${resultsRevealed ? `
+                                <div class="p-3 bg-slate-50 border border-slate-200 rounded text-xs mt-1">
+                                    <strong>Model Answer Guidelines:</strong> Keywords: ${q.correctKeywords.join(', ')}<br>
+                                    <strong>Explanation:</strong> ${q.explanation}
+                                </div>
+                            ` : `
+                                <div class="border-b border-dashed border-slate-400 h-16 w-full"></div>
+                            `}
                         </div>
                     `;
                 }
 
                 // Inline Feedback / Explanation area
-                const feedbackDiv = `
-                    <div id="feedback-${q.id}" class="mt-4 p-4 rounded-lg hidden text-sm">
-                        <!-- Filled by JS on action -->
-                    </div>
-                `;
+                let feedbackDiv = `<div id="feedback-${q.id}" class="mt-4 p-4 rounded-lg border `;
+                if (resultsRevealed) {
+                    if (q.type === "mc") {
+                        const isCorrect = selectedAnswers[q.id] === q.correct;
+                        if (isCorrect) {
+                            feedbackDiv += `bg-green-50 border-green-200 text-green-800 block">`;
+                            feedbackDiv += `
+                                <span class="font-bold">✓ Correct!</span>
+                                <p class="mt-1 text-xs text-green-700">${q.explanation}</p>
+                            `;
+                        } else {
+                            const chosenIdx = selectedAnswers[q.id];
+                            const chosen = chosenIdx !== undefined ? q.options[chosenIdx] : "No answer selected";
+                            feedbackDiv += `bg-red-50 border-red-200 text-red-800 block">`;
+                            feedbackDiv += `
+                                <span class="font-bold">✗ Incorrect</span>
+                                <p class="mt-1 text-xs text-red-700">You chose: <strong>${chosen}</strong>. <br>The correct answer is: <strong>${q.options[q.correct]}</strong>. <br>${q.explanation}</p>
+                            `;
+                        }
+                    } else if (q.type === "sa") {
+                        const userScore = scores[q.id];
+                        let activeBg = "bg-indigo-50 border-indigo-200 text-indigo-800";
+                        if (userScore === 1) activeBg = "bg-green-50 border-green-200 text-green-800";
+                        else if (userScore === 0) activeBg = "bg-red-50 border-red-200 text-red-800";
+                        
+                        feedbackDiv += `${activeBg} block">`;
+                        feedbackDiv += `
+                            <span class="font-bold">Model Answer Guide:</span>
+                            <p class="mt-1 text-xs text-indigo-700">Your answer should have covered keywords like: <strong>${q.correctKeywords.join(", ")}</strong></p>
+                            <p class="mt-2 text-xs text-slate-600"><strong>Full Explanation:</strong> ${q.explanation}</p>
+                            <div class="mt-3 flex gap-2">
+                                <button onclick="markSA(${q.id}, true)" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded text-xs transition">I covered the keywords (+1)</button>
+                                <button onclick="markSA(${q.id}, false)" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded text-xs transition">I missed the keywords (0)</button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    feedbackDiv += `hidden">`;
+                }
+                feedbackDiv += `</div>`;
 
-                // Permanent Answer Key (For Teacher Mode / Print with answers)
-                const answerKeyDiv = `
-                    <div id="answer-key-${q.id}" class="${teacherMode ? 'block' : 'hidden'} print:hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm">
-                        <span class="font-bold text-amber-800">Correct Answer:</span> 
-                        <p class="text-slate-800 mt-1">${q.type === 'mc' ? q.options[q.correct] : 'Check for keywords: ' + q.correctKeywords.join(', ')}</p>
-                        <p class="text-slate-500 text-xs mt-2 italic"><strong>Explanation:</strong> ${q.explanation}</p>
-                    </div>
-                `;
-
-                card.innerHTML = cardHeader + formFields + feedbackDiv + answerKeyDiv;
+                card.innerHTML = cardHeader + formFields + feedbackDiv;
                 container.appendChild(card);
             });
 
             updateProgress();
         }
 
-        const scores = {};
-        const completed = {};
-
-        function checkAnswer(qId, selectedIdx, correctIdx) {
-            if (teacherMode) return;
-            const feedback = document.getElementById(`feedback-${qId}`);
-            feedback.classList.remove("hidden", "bg-green-50", "border-green-200", "text-green-800", "bg-red-50", "border-red-200", "text-red-800");
-
-            const q = questions.find(item => item.id === qId);
-
-            if (selectedIdx === correctIdx) {
-                feedback.innerHTML = `
-                    <span class="font-bold">✓ Correct!</span>
-                    <p class="mt-1 text-xs text-green-700">${q.explanation}</p>
-                `;
-                feedback.classList.add("bg-green-50", "border-green-200", "text-green-800", "border");
-                scores[qId] = 1;
-            } else {
-                feedback.innerHTML = `
-                    <span class="font-bold">✗ Incorrect</span>
-                    <p class="mt-1 text-xs text-red-700">The correct answer is: <strong>${q.options[correctIdx]}</strong>. <br>${q.explanation}</p>
-                `;
-                feedback.classList.add("bg-red-50", "border-red-200", "text-red-800", "border");
-                scores[qId] = 0;
-            }
-            feedback.classList.remove("hidden");
+        function selectMC(qId, optIdx) {
+            if (resultsRevealed) return;
+            selectedAnswers[qId] = optIdx;
             completed[qId] = true;
-            updateProgress();
+            renderQuiz();
         }
 
-        function evaluateSA(qId) {
-            const val = document.getElementById(`input-sa-${qId}`).value.toLowerCase();
+        function evaluateSA(qId, val) {
+            if (resultsRevealed) return;
+            saAnswers[qId] = val;
             if (val.trim().length > 3) {
                 completed[qId] = true;
             } else {
@@ -581,55 +625,55 @@
             updateProgress();
         }
 
-        function revealSA(qId) {
-            const feedback = document.getElementById(`feedback-${qId}`);
-            const q = questions.find(item => item.id === qId);
-            feedback.innerHTML = `
-                <span class="font-bold text-indigo-800">Model Answer Guide:</span>
-                <p class="mt-1 text-xs text-indigo-700">Must include elements like: <strong>${q.correctKeywords.join(", ")}</strong></p>
-                <p class="mt-2 text-xs text-slate-600"><strong>Full Explanation:</strong> ${q.explanation}</p>
-                <div class="mt-2 flex gap-2">
-                    <button onclick="markSA(${qId}, true)" class="bg-green-600 text-white px-2 py-0.5 rounded text-xs">I got it right (+1)</button>
-                    <button onclick="markSA(${qId}, false)" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-xs">Needs work (0)</button>
-                </div>
-            `;
-            feedback.className = "mt-4 p-4 rounded-lg bg-indigo-50 border border-indigo-200 text-sm block";
-            completed[qId] = true;
-            updateProgress();
-        }
-
         function markSA(qId, isCorrect) {
             scores[qId] = isCorrect ? 1 : 0;
-            updateProgress();
-            const feedback = document.getElementById(`feedback-${qId}`);
-            if (isCorrect) {
-                feedback.classList.replace("bg-indigo-50", "bg-green-50");
-                feedback.classList.replace("border-indigo-200", "border-green-200");
-            } else {
-                feedback.classList.replace("bg-indigo-50", "bg-red-50");
-                feedback.classList.replace("border-indigo-200", "border-red-200");
-            }
+            renderQuiz();
         }
 
-        function toggleTeacherMode() {
-            teacherMode = !teacherMode;
-            const btn = document.getElementById("toggle-answers");
-            if (teacherMode) {
-                btn.innerHTML = `
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
-                    <span>Hide All Answers</span>
-                `;
-                btn.classList.replace("bg-amber-600", "bg-slate-700");
-                btn.classList.replace("hover:bg-amber-500", "hover:bg-slate-600");
-            } else {
-                btn.innerHTML = `
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    <span>Show All Answers</span>
-                `;
-                btn.classList.replace("bg-slate-700", "bg-amber-600");
-                btn.classList.replace("hover:bg-slate-600", "hover:bg-amber-500");
-            }
+        function revealAllResults() {
+            resultsRevealed = true;
+            
+            // Grade all questions
+            questions.forEach(q => {
+                if (q.type === 'mc') {
+                    if (selectedAnswers[q.id] === q.correct) {
+                        scores[q.id] = 1;
+                    } else {
+                        scores[q.id] = 0;
+                    }
+                } else if (q.type === 'sa') {
+                    // Pre-grade algorithm based on keyword matching
+                    const userAns = (saAnswers[q.id] || "").toLowerCase();
+                    let matchCount = 0;
+                    q.correctKeywords.forEach(kw => {
+                        if (userAns.includes(kw.toLowerCase())) {
+                            matchCount++;
+                        }
+                    });
+                    scores[q.id] = matchCount >= 2 ? 1 : 0;
+                }
+            });
+            
             renderQuiz();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function activateTeacherMode() {
+            if (confirm("Teacher Mode will instantly reveal all correct answers and model guides for class whiteboard projection. Continue?")) {
+                questions.forEach(q => {
+                    completed[q.id] = true;
+                    if (q.type === 'mc') {
+                        selectedAnswers[q.id] = q.correct;
+                        scores[q.id] = 1;
+                    } else {
+                        saAnswers[q.id] = "Teacher model answer projection.";
+                        scores[q.id] = 1;
+                    }
+                });
+                resultsRevealed = true;
+                renderQuiz();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
         function filterTopic(category) {
@@ -648,14 +692,36 @@
             document.getElementById("progress-bar").style.width = `${progressPct}%`;
             document.getElementById("progress-text").innerText = `${completedCount} of ${questions.length} completed`;
 
-            let correctCount = 0;
-            Object.values(scores).forEach(val => {
-                correctCount += val;
-            });
-            document.getElementById("live-score").innerText = `Score: ${correctCount}/${questions.length}`;
+            const revealBtn = document.getElementById("reveal-results-btn");
+            if (resultsRevealed) {
+                revealBtn.innerText = "Results Revealed";
+                revealBtn.disabled = true;
+                revealBtn.className = "bg-green-100 text-green-800 font-bold px-3 py-1.5 rounded text-xs cursor-default";
+                
+                // Calculate score
+                let correctCount = 0;
+                questions.forEach(q => {
+                    if (scores[q.id] === 1) correctCount++;
+                });
+                document.getElementById("live-score").innerText = `Score: ${correctCount}/${questions.length}`;
+            } else {
+                if (completedCount === questions.length) {
+                    revealBtn.innerText = "🔓 Reveal Results & Answers";
+                    revealBtn.disabled = false;
+                    revealBtn.className = "bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded text-xs cursor-pointer shadow animate-pulse";
+                } else {
+                    revealBtn.innerText = "Lock Answers";
+                    revealBtn.disabled = true;
+                    revealBtn.className = "bg-slate-200 text-slate-400 font-bold px-3 py-1.5 rounded text-xs cursor-not-allowed";
+                }
+                document.getElementById("live-score").innerText = "Score Locked";
+            }
         }
 
         function resetQuiz() {
+            resultsRevealed = false;
+            selectedAnswers = {};
+            saAnswers = {};
             for (let key in scores) delete scores[key];
             for (let key in completed) delete completed[key];
             updateProgress();
