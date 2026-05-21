@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eduqas GCE A-Level Computer Science Component 1 Mega Quiz</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-break { page-break-after: always; }
+            body { background-color: white !important; color: black !important; }
+            .shadow-lg, .shadow-md { shadow: none !important; border: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
+
+    <!-- Header Section -->
+    <header class="bg-indigo-900 text-white py-8 px-4 shadow-md no-print">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between">
+            <div>
+                <span class="bg-indigo-700 text-indigo-200 text-xs font-bold uppercase px-3 py-1 rounded-full">Final Revision Lesson</span>
+                <h1 class="text-3xl font-extrabold mt-2 tracking-tight">Component 1 Mega Quiz</h1>
+                <p class="text-indigo-200 mt-1">Programming, Algorithms, Systems Development & Digital Issues</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-3">
+                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Print Handout
+                </button>
+                <button id="toggle-answers" onclick="toggleTeacherMode()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <span>Show All Answers</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Score Bar (Floating, No Print) -->
+    <div class="sticky top-0 bg-white border-b border-slate-200 py-3 px-4 z-40 no-print shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="font-bold text-slate-700">Quiz Progress:</span>
+                <span id="progress-text" class="text-slate-600 text-sm">0 of 30 completed</span>
+            </div>
+            <div class="w-1/3 bg-slate-200 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-indigo-950" id="live-score">Score: 0/30</span>
+                <button onclick="resetQuiz()" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 rounded border border-red-200 hover:bg-red-50">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Header (Only visible on paper) -->
+    <div class="hidden print:block p-6 border-b border-slate-300 max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold text-center">Component 1: Programming & System Development Handout</h1>
+        <p class="text-center text-sm text-slate-500 mt-1">Eduqas A-Level Computer Science Revision Quiz</p>
+        <div class="flex justify-between mt-4 text-xs font-semibold">
+            <span>Name: ____________________________________</span>
+            <span>Date: __________________</span>
+            <span>Score: ________ / 30</span>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-6xl mx-auto py-8 px-4">
+        <!-- Topic Tabs (No Print) -->
+        <div class="flex flex-wrap gap-2 mb-8 no-print">
+            <button onclick="filterTopic('all')" class="topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-indigo-900 text-white" id="tab-all">All Questions</button>
+            <button onclick="filterTopic('data')" class="topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300" id="tab-data">Data Structures & Representation</button>
+            <button onclick="filterTopic('logic')" class="topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300" id="tab-logic">Logic & Algorithms</button>
+            <button onclick="filterTopic('systems')" class="topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300" id="tab-systems">Systems Life Cycle & SE</button>
+            <button onclick="filterTopic('legal')" class="topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300" id="tab-legal">Legal, Ethical & Moral</button>
+        </div>
+
+        <div id="quiz-container" class="space-y-6">
+            <!-- Questions are injected here via JS -->
+        </div>
+    </main>
+
+    <!-- Embedded Vanilla JS to drive UI and Questions -->
+    <script>
+        const questions = [
+            // --- DATA STRUCTURES & REPRESENTATION ---
+            {
+                id: 1,
+                category: "data",
+                type: "mc",
+                text: "What is the primary operational principle of a Stack data structure?",
+                options: [
+                    "FIFO (First In, First Out)",
+                    "LIFO (Last In, First Out)",
+                    "Random Access",
+                    "Key-value hashing map"
+                ],
+                correct: 1,
+                explanation: "A Stack is a LIFO (Last In, First Out) structure. New items are pushed onto the top and popped off from the top only."
+            },
+            {
+                id: 2,
+                category: "data",
+                type: "sa",
+                text: "Describe what is meant by a 'rogue value' (sentinel) in the context of linked list operations.",
+                placeholder: "e.g. A pointer set to -1...",
+                correctKeywords: ["-1", "null", "end", "pointer", "sentinel"],
+                explanation: "A rogue value (like -1 or a null pointer) is placed in the pointer field of the last node to indicate that there are no further nodes in the list."
+            },
+            {
+                id: 3,
+                category: "data",
+                type: "mc",
+                text: "When implementing a Queue using an array, which of the following pointer strategies is required?",
+                options: [
+                    "A single 'top' pointer that increments on push and decrements on pop.",
+                    "No pointers are required as arrays are static.",
+                    "Two pointers: one pointing to the front (to dequeue) and one pointing to the back (to enqueue).",
+                    "A binary tree traversal search mechanism."
+                ],
+                correct: 2,
+                explanation: "Queues require two dynamic pointers: 'front' (for removing/dequeuing) and 'back/rear' (for inserting/enqueuing) to manage the FIFO structure inside a static array."
+            },
+            {
+                id: 4,
+                category: "data",
+                type: "sa",
+                text: "What is a 'data collision' in a Hash Table, and how is progressive overflow used to handle it?",
+                placeholder: "e.g. When two keys hash to the same address...",
+                correctKeywords: ["collision", "same address", "overflow", "next available"],
+                explanation: "A collision occurs when two different keys calculate to the exact same hash address. In progressive overflow, the system sequentially searches for and places the colliding item in the next physically available memory block."
+            },
+            {
+                id: 5,
+                category: "data",
+                type: "mc",
+                text: "What are the storage requirements of an ASCII character and a Boolean data type respectively in modern architecture?",
+                options: [
+                    "8 bits (ASCII) and 1 bit (Boolean)",
+                    "16 bits (ASCII) and 8 bits (Boolean)",
+                    "32 bits (ASCII) and 16 bits (Boolean)",
+                    "8 bits (ASCII) and 8 bits (Boolean)"
+                ],
+                correct: 0,
+                explanation: "ASCII standardized characters require 8 bits (1 byte) of storage space. A Boolean variable theoretically only requires 1 bit (representing 0 or 1), although some systems assign a full byte for alignment."
+            },
+            {
+                id: 6,
+                category: "data",
+                type: "sa",
+                text: "Explain why dynamic data structures (like linked lists) are more flexible than static data structures (like standard arrays).",
+                placeholder: "e.g. Memory is allocated at runtime...",
+                correctKeywords: ["grow", "shrink", "runtime", "dynamic", "heap", "size"],
+                explanation: "Dynamic structures allocate memory dynamically at runtime from the heap, meaning they can grow and shrink in size as required by the program, avoiding the wasted/insufficient memory limitations of fixed-size static arrays."
+            },
+
+            // --- LOGIC & ALGORITHMS ---
+            {
+                id: 7,
+                category: "logic",
+                type: "mc",
+                text: "According to Boolean Algebra, which of the following is equivalent to the expression: A . (A + B) ?",
+                options: [
+                    "A . B",
+                    "A + B",
+                    "A",
+                    "B"
+                ],
+                correct: 2,
+                explanation: "By the Absorption Law of Boolean Algebra, A . (A + B) simplifies directly to A."
+            },
+            {
+                id: 8,
+                category: "logic",
+                type: "sa",
+                text: "Simplify the following expression using Boolean rules and De Morgan's Law: NOT(A AND B)",
+                placeholder: "e.g. NOT A OR NOT B...",
+                correctKeywords: ["not a or not b", "a' + b'", "a + b"],
+                explanation: "Using De Morgan's Law, the negation of a conjunction is the disjunction of the negations: NOT(A AND B) = NOT A OR NOT B."
+            },
+            {
+                id: 9,
+                category: "logic",
+                type: "mc",
+                text: "Which of the following Boolean logic operations yields TRUE only when its two input parameters are mismatched (one is 1, and the other is 0)?",
+                options: [
+                    "NAND",
+                    "NOR",
+                    "AND",
+                    "XOR"
+                ],
+                correct: 3,
+                explanation: "The Exclusive OR (XOR) gate yields a TRUE (1) output if and only if the inputs are different."
+            },
+            {
+                id: 10,
+                category: "logic",
+                type: "sa",
+                text: "Explain the main difference in execution steps between an iterative approach and a recursive approach.",
+                placeholder: "e.g. Recursion calls itself...",
+                correctKeywords: ["recursion", "calls itself", "stack", "loop", "base case"],
+                explanation: "An iterative approach loops the same code a set number of times or until a condition changes. A recursive approach involves a routine calling itself on a changing parameter, storing previous call states on a stack, until a base case is hit."
+            },
+            {
+                id: 11,
+                category: "logic",
+                type: "mc",
+                text: "What is the average time complexity of a Quicksort algorithm when evaluated using Big O notation?",
+                options: [
+                    "O(n)",
+                    "O(n log n)",
+                    "O(n²)",
+                    "O(log n)"
+                ],
+                correct: 1,
+                explanation: "The average time complexity of Quicksort is O(n log n). However, in its worst-case scenario (unbalanced pivots), it can degrade to O(n²)."
+            },
+            {
+                id: 12,
+                category: "logic",
+                type: "sa",
+                text: "Explain the space complexity difference between Bubble Sort and a recursive Quicksort.",
+                placeholder: "e.g. Quicksort uses more space because...",
+                correctKeywords: ["stack", "recursion", "recursive", "calls", "in-place", "auxiliary"],
+                explanation: "Bubble Sort has a space complexity of O(1) because it sorts in-place. Recursive Quicksort has a space complexity of O(log n) due to the call stack space required to keep track of the recursive subroutine calls."
+            },
+            {
+                id: 13,
+                category: "logic",
+                type: "mc",
+                text: "Which search algorithm requires that the target dataset be sorted before starting, and works by repeatedly halving the search space?",
+                options: [
+                    "Linear Search",
+                    "Binary Search",
+                    "Breadth-First Search",
+                    "Hash addressing search"
+                ],
+                correct: 1,
+                explanation: "Binary Search is a divide-and-conquer algorithm with a time complexity of O(log n). It must work on sorted data so it can accurately calculate a midpoint and discard half the data."
+            },
+
+            // --- SYSTEMS LIFECYCLE & SOFTWARE ENGINEERING ---
+            {
+                id: 14,
+                category: "systems",
+                type: "sa",
+                text: "Compare the Waterfall lifecycle approach with the Agile methodology.",
+                placeholder: "e.g. Waterfall is linear, Agile is iterative...",
+                correctKeywords: ["linear", "iterative", "sequential", "incremental", "prototype", "stages"],
+                explanation: "The Waterfall model is a structured, sequential approach where each stage must be signed off before the next begins. Agile is an iterative, adaptive approach focusing on producing functional prototype increments with ongoing client collaboration."
+            },
+            {
+                id: 15,
+                category: "systems",
+                type: "mc",
+                text: "Which phase of the Systems Analysis Cycle checks whether a proposed solution will be cost-effective, legal, technically achievable, and delivered on time?",
+                options: [
+                    "Requirements Analysis",
+                    "Feasibility Study",
+                    "Alpha Testing",
+                    "Perfective Maintenance"
+                ],
+                correct: 1,
+                explanation: "The Feasibility Study evaluates the economic, legal, technical, and scheduling (time) parameters of a proposed project before major investments are committed."
+            },
+            {
+                id: 16,
+                category: "systems",
+                type: "mc",
+                text: "What implementation/changeover strategy involves running both the old legacy system and the new system simultaneously to ensure reliability?",
+                options: [
+                    "Direct Changeover",
+                    "Phased Changeover",
+                    "Pilot Changeover",
+                    "Parallel Changeover"
+                ],
+                correct: 3,
+                explanation: "Parallel changeover is the safest method. It runs both systems side-by-side. If the new system fails, the legacy system acts as an active backup."
+            },
+            {
+                id: 17,
+                category: "systems",
+                type: "sa",
+                text: "What is the difference between Alpha testing and Beta testing?",
+                placeholder: "e.g. Alpha is internal, Beta is external...",
+                correctKeywords: ["developers", "internal", "external", "users", "bugs"],
+                explanation: "Alpha testing is carried out internally by the company's developers or in-house testers. Beta testing is carried out externally by releasing a pre-release version of the system to actual prospective end-users in real-world environments."
+            },
+            {
+                id: 18,
+                category: "systems",
+                type: "mc",
+                text: "A developer updates a SatNav program to include a brand new speed camera warning feature requested by the user. What type of maintenance is this?",
+                options: [
+                    "Corrective Maintenance",
+                    "Adaptive Maintenance",
+                    "Perfective Maintenance",
+                    "Preventative Maintenance"
+                ],
+                correct: 2,
+                explanation: "Adaptive maintenance changes or enhances software to satisfy new requirements or changes in the operational environment."
+            },
+            {
+                id: 19,
+                category: "systems",
+                type: "sa",
+                text: "What deliverables should be included in standard system Maintenance Documentation to assist future programmers?",
+                placeholder: "e.g. Data dictionary, annotated code listings...",
+                correctKeywords: ["annotated", "variable list", "data dictionary", "algorithms", "pseudocode"],
+                explanation: "Maintenance documentation should include annotated source code listings, data dictionaries, variable lists, structure charts, algorithms, and technical system specifications."
+            },
+            {
+                id: 20,
+                category: "systems",
+                type: "mc",
+                text: "Which of the following is an example of an Upper CASE tool?",
+                options: [
+                    "Code compilers and linkers",
+                    "Program version management systems",
+                    "UML diagram and flow-chart design software used in requirements engineering",
+                    "Active runtime debuggers"
+                ],
+                correct: 2,
+                explanation: "Upper CASE tools assist in the early phases of development (Planning, Analysis, and Design), such as visual diagram builders, whereas Lower CASE tools assist in Implementation, Testing, and Maintenance."
+            },
+            {
+                id: 21,
+                category: "systems",
+                type: "sa",
+                text: "Explain the difference between Translation errors and Execution (Runtime) errors.",
+                placeholder: "e.g. Translation errors prevent compilation...",
+                correctKeywords: ["compile", "syntax", "runtime", "execution", "crash", "zero"],
+                explanation: "Translation errors (e.g. syntax errors) are identified during translation and prevent compilation. Execution/Runtime errors occur during program execution (e.g., division by zero), causing the compiled program to crash or produce illegal operations."
+            },
+            {
+                id: 22,
+                category: "systems",
+                type: "mc",
+                text: "How does the 'Variable Watch' tool within an Integrated Development Environment (IDE) assist developers during debugging?",
+                options: [
+                    "It automatically corrects spelling errors in code syntax.",
+                    "It displays the values of specified variables in real-time as the code is executed.",
+                    "It schedules execution priorities of the active processes.",
+                    "It compiles high-level language directly into machine-run blocks."
+                ],
+                correct: 1,
+                explanation: "A Variable Watch window allows a developer to inspect and trace variables, observing how their values change line-by-line during stepping operations."
+            },
+            {
+                id: 23,
+                category: "systems",
+                type: "mc",
+                text: "What is 'Program Version Management'?",
+                options: [
+                    "A procedure to track and control changes in the software's source code history.",
+                    "The process of updating operating systems.",
+                    "Managing RAM allocation tables for compilers.",
+                    "Upgrading visual drag-and-drop components inside an editor."
+                ],
+                correct: 0,
+                explanation: "Version management (such as Git) tracks and logs code modifications, enabling rollback of source code to previous operational versions and concurrent cooperative development."
+            },
+
+            // --- LEGAL, ETHICAL & MORAL ISSUES ---
+            {
+                id: 24,
+                category: "legal",
+                type: "sa",
+                text: "Under the General Data Protection Regulation (GDPR), what are two key principles governing personal data?",
+                placeholder: "e.g. Kept secure, accurate and up-to-date...",
+                correctKeywords: ["accurate", "up-to-date", "secure", "lawfully", "fairly", "minimisation", "retention"],
+                explanation: "Key GDPR principles include: processing data lawfully, fairly and transparently; limiting purpose; minimizing data collection; keeping it accurate; storing it no longer than necessary; and ensuring appropriate security."
+            },
+            {
+                id: 25,
+                category: "legal",
+                type: "mc",
+                text: "Under the Computer Misuse Act 1990, which of the following is defined as a criminal offence?",
+                options: [
+                    "Using copyrighted images on a public web page without attribution.",
+                    "Sharing personal student databases with third-party advertising companies.",
+                    "Unauthorised access to computer material (e.g. hacking or accessing files without permission).",
+                    "Refusing to release encryption keys when requested by intelligence agencies."
+                ],
+                correct: 2,
+                explanation: "The Computer Misuse Act 1990 lists unauthorised access to computer material (hacking) as its baseline offence."
+            },
+            {
+                id: 26,
+                category: "legal",
+                type: "mc",
+                text: "Which UK Act is concerned with giving public bodies surveillance powers, including intercepting customer communications?",
+                options: [
+                    "Freedom of Information Act",
+                    "Regulation of Investigatory Powers Act (RIPA)",
+                    "Data Protection Act",
+                    "Copyright, Designs and Patents Act"
+                ],
+                correct: 1,
+                explanation: "The Regulation of Investigatory Powers Act (RIPA) 2000 regulates the interception and surveillance of communications by government agencies."
+            },
+            {
+                id: 27,
+                category: "legal",
+                type: "sa",
+                text: "State the purpose of the Freedom of Information Act and one exception to its application.",
+                placeholder: "e.g. Public right to request information, except national security...",
+                correctKeywords: ["request", "public authorities", "exception", "security", "defense", "investigations"],
+                explanation: "The Act gives citizens the right to request access to official information held by public authorities. Exceptions include issues affecting national security, ongoing police investigations, or trade secrets."
+            },
+            {
+                id: 28,
+                category: "legal",
+                type: "mc",
+                text: "What organization or association acts to protect developers by prosecuting piracy and educating on legal licensing usage?",
+                options: [
+                    "World Wide Web Consortium (W3C)",
+                    "British Computer Society (BCS)",
+                    "Federation Against Software Theft (FAST)",
+                    "ACM / IEEE software joint task force"
+                ],
+                correct: 2,
+                explanation: "FAST (Federation Against Software Theft) targets software copyright infringement, prosecuting software piracy and encouraging legal usage compliance."
+            },
+            {
+                id: 29,
+                category: "legal",
+                type: "sa",
+                text: "Identify two key standards included in the British Computer Society (BCS) Code of Conduct for Professional Competence and Integrity.",
+                placeholder: "e.g. Do not claim competence you do not have...",
+                correctKeywords: ["competence", "professional development", "legislation", "honesty", "bribe", "bribes"],
+                explanation: "BCS standards include only undertaking work within your professional competence, keeping skills up-to-date, avoiding bribery, and understanding and adhering to relevant legislation."
+            },
+            {
+                id: 30,
+                category: "legal",
+                type: "mc",
+                text: "Which of the following represents an ethical conflict in Automated Decision Making, such as autonomous self-driving cars?",
+                options: [
+                    "How to construct relational tables with foreign keys.",
+                    "How algorithm logic handles emergency situations (e.g. swerving to avoid obstacles vs occupant safety).",
+                    "Using lossless run-length encoding instead of lossy JPG compression.",
+                    "Configuring double buffering algorithms to run at different device transfer rates."
+                ],
+                correct: 1,
+                explanation: "Autonomous decisions raise ethical questions regarding crash survival prioritization (e.g., whether to protect passengers or pedestrians in unavoidable collision scenarios)."
+            }
+        ];
+
+        let teacherMode = false;
+        let selectedCategory = 'all';
+
+        function renderQuiz() {
+            const container = document.getElementById("quiz-container");
+            container.innerHTML = "";
+
+            const filteredQuestions = selectedCategory === 'all' 
+                ? questions 
+                : questions.filter(q => q.category === selectedCategory);
+
+            filteredQuestions.forEach((q, idx) => {
+                const card = document.createElement("div");
+                card.className = "bg-white p-6 rounded-xl shadow-sm border border-slate-200 transition-all duration-200 hover:shadow-md relative print:shadow-none print:border-slate-300 print:my-4 print:p-4";
+                card.id = `q-card-${q.id}`;
+
+                // Header
+                const catNames = {
+                    data: "Data Structures & Representation",
+                    logic: "Logic & Algorithms",
+                    systems: "Systems Analysis & SE",
+                    legal: "Legal, Ethical & Moral"
+                };
+
+                let cardHeader = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 print:text-slate-600">[${catNames[q.category]}]</span>
+                        <span class="text-xs text-slate-400 no-print">Q#${q.id}</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 print:text-black print:text-base"><span class="text-indigo-900 print:text-black font-extrabold mr-2">${q.id}.</span>${q.text}</h3>
+                `;
+
+                let formFields = "";
+                if (q.type === "mc") {
+                    formFields = `<div class="space-y-2 no-print">`;
+                    q.options.forEach((opt, optIdx) => {
+                        formFields += `
+                            <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+                                <input type="radio" name="q-${q.id}" value="${optIdx}" onclick="checkAnswer(${q.id}, ${optIdx}, ${q.correct})" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-700">${opt}</span>
+                            </label>
+                        `;
+                    });
+                    formFields += `</div>`;
+
+                    // Printable view for MC
+                    formFields += `<div class="hidden print:block mt-3 space-y-1">`;
+                    q.options.forEach((opt, optIdx) => {
+                        formFields += `
+                            <div class="text-sm flex items-start gap-2">
+                                <span class="border border-slate-400 rounded-full w-4 h-4 inline-block mt-0.5 flex-shrink-0"></span>
+                                <span>${opt}</span>
+                            </div>
+                        `;
+                    });
+                    formFields += `</div>`;
+
+                } else if (q.type === "sa") {
+                    formFields = `
+                        <div class="no-print">
+                            <textarea id="input-sa-${q.id}" oninput="evaluateSA(${q.id})" rows="3" placeholder="${q.placeholder}" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                            <button onclick="revealSA(${q.id})" class="mt-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded transition">Self Check / Reveal</button>
+                        </div>
+                        <div class="hidden print:block mt-2">
+                            <div class="border-b border-dashed border-slate-400 h-16 w-full"></div>
+                        </div>
+                    `;
+                }
+
+                // Inline Feedback / Explanation area
+                const feedbackDiv = `
+                    <div id="feedback-${q.id}" class="mt-4 p-4 rounded-lg hidden text-sm">
+                        <!-- Filled by JS on action -->
+                    </div>
+                `;
+
+                // Permanent Answer Key (For Teacher Mode / Print with answers)
+                const answerKeyDiv = `
+                    <div id="answer-key-${q.id}" class="${teacherMode ? 'block' : 'hidden'} print:hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                        <span class="font-bold text-amber-800">Correct Answer:</span> 
+                        <p class="text-slate-800 mt-1">${q.type === 'mc' ? q.options[q.correct] : 'Check for keywords: ' + q.correctKeywords.join(', ')}</p>
+                        <p class="text-slate-500 text-xs mt-2 italic"><strong>Explanation:</strong> ${q.explanation}</p>
+                    </div>
+                `;
+
+                card.innerHTML = cardHeader + formFields + feedbackDiv + answerKeyDiv;
+                container.appendChild(card);
+            });
+
+            updateProgress();
+        }
+
+        const scores = {};
+        const completed = {};
+
+        function checkAnswer(qId, selectedIdx, correctIdx) {
+            if (teacherMode) return;
+            const feedback = document.getElementById(`feedback-${qId}`);
+            feedback.classList.remove("hidden", "bg-green-50", "border-green-200", "text-green-800", "bg-red-50", "border-red-200", "text-red-800");
+
+            const q = questions.find(item => item.id === qId);
+
+            if (selectedIdx === correctIdx) {
+                feedback.innerHTML = `
+                    <span class="font-bold">✓ Correct!</span>
+                    <p class="mt-1 text-xs text-green-700">${q.explanation}</p>
+                `;
+                feedback.classList.add("bg-green-50", "border-green-200", "text-green-800", "border");
+                scores[qId] = 1;
+            } else {
+                feedback.innerHTML = `
+                    <span class="font-bold">✗ Incorrect</span>
+                    <p class="mt-1 text-xs text-red-700">The correct answer is: <strong>${q.options[correctIdx]}</strong>. <br>${q.explanation}</p>
+                `;
+                feedback.classList.add("bg-red-50", "border-red-200", "text-red-800", "border");
+                scores[qId] = 0;
+            }
+            feedback.classList.remove("hidden");
+            completed[qId] = true;
+            updateProgress();
+        }
+
+        function evaluateSA(qId) {
+            const val = document.getElementById(`input-sa-${qId}`).value.toLowerCase();
+            if (val.trim().length > 3) {
+                completed[qId] = true;
+            } else {
+                delete completed[qId];
+            }
+            updateProgress();
+        }
+
+        function revealSA(qId) {
+            const feedback = document.getElementById(`feedback-${qId}`);
+            const q = questions.find(item => item.id === qId);
+            feedback.innerHTML = `
+                <span class="font-bold text-indigo-800">Model Answer Guide:</span>
+                <p class="mt-1 text-xs text-indigo-700">Must include elements like: <strong>${q.correctKeywords.join(", ")}</strong></p>
+                <p class="mt-2 text-xs text-slate-600"><strong>Full Explanation:</strong> ${q.explanation}</p>
+                <div class="mt-2 flex gap-2">
+                    <button onclick="markSA(${qId}, true)" class="bg-green-600 text-white px-2 py-0.5 rounded text-xs">I got it right (+1)</button>
+                    <button onclick="markSA(${qId}, false)" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-xs">Needs work (0)</button>
+                </div>
+            `;
+            feedback.className = "mt-4 p-4 rounded-lg bg-indigo-50 border border-indigo-200 text-sm block";
+            completed[qId] = true;
+            updateProgress();
+        }
+
+        function markSA(qId, isCorrect) {
+            scores[qId] = isCorrect ? 1 : 0;
+            updateProgress();
+            const feedback = document.getElementById(`feedback-${qId}`);
+            if (isCorrect) {
+                feedback.classList.replace("bg-indigo-50", "bg-green-50");
+                feedback.classList.replace("border-indigo-200", "border-green-200");
+            } else {
+                feedback.classList.replace("bg-indigo-50", "bg-red-50");
+                feedback.classList.replace("border-indigo-200", "border-red-200");
+            }
+        }
+
+        function toggleTeacherMode() {
+            teacherMode = !teacherMode;
+            const btn = document.getElementById("toggle-answers");
+            if (teacherMode) {
+                btn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                    <span>Hide All Answers</span>
+                `;
+                btn.classList.replace("bg-amber-600", "bg-slate-700");
+                btn.classList.replace("hover:bg-amber-500", "hover:bg-slate-600");
+            } else {
+                btn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <span>Show All Answers</span>
+                `;
+                btn.classList.replace("bg-slate-700", "bg-amber-600");
+                btn.classList.replace("hover:bg-slate-600", "hover:bg-amber-500");
+            }
+            renderQuiz();
+        }
+
+        function filterTopic(category) {
+            selectedCategory = category;
+            document.querySelectorAll(".topic-tab").forEach(btn => {
+                btn.className = "topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300";
+            });
+            const activeTab = document.getElementById(`tab-${category}`);
+            activeTab.className = "topic-tab px-4 py-2 rounded-full text-sm font-semibold bg-indigo-900 text-white";
+            renderQuiz();
+        }
+
+        function updateProgress() {
+            const completedCount = Object.keys(completed).length;
+            const progressPct = (completedCount / questions.length) * 100;
+            document.getElementById("progress-bar").style.width = `${progressPct}%`;
+            document.getElementById("progress-text").innerText = `${completedCount} of ${questions.length} completed`;
+
+            let correctCount = 0;
+            Object.values(scores).forEach(val => {
+                correctCount += val;
+            });
+            document.getElementById("live-score").innerText = `Score: ${correctCount}/${questions.length}`;
+        }
+
+        function resetQuiz() {
+            for (let key in scores) delete scores[key];
+            for (let key in completed) delete completed[key];
+            updateProgress();
+            renderQuiz();
+        }
+
+        // Initialize quiz rendering
+        window.onload = function() {
+            renderQuiz();
+        }
+    </script>
+</body>
+</html>
